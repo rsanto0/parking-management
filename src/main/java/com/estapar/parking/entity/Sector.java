@@ -30,6 +30,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "sectors")
 @Data
 @NoArgsConstructor
+@org.hibernate.annotations.DynamicInsert
+@org.hibernate.annotations.DynamicUpdate
 public class Sector {
     
     /**

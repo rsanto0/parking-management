@@ -10,6 +10,59 @@ Sistema backend para gerenciar estacionamento com controle de vagas, entrada/sa�
 - MySQL 8
 - Maven
 - Docker
+- Lombok
+
+## 🚀 Setup Rápido
+
+### Pré-requisitos
+- **Java 21** ou superior
+- **Maven 3.6+**
+- **Docker Desktop**
+- **IDE** (Eclipse, IntelliJ, VS Code)
+
+### Configuração do Ambiente
+
+1. **Clone o repositório:**
+```bash
+git clone https://github.com/seu-usuario/parking-management.git
+cd parking-management
+```
+
+2. **Compile o projeto:**
+```bash
+mvn clean install
+```
+
+3. **Configure Lombok na IDE:**
+
+#### Eclipse:
+1. **Baixe o Lombok:**
+   - Acesse: https://projectlombok.org/download
+   - Baixe o arquivo `lombok.jar`
+
+2. **Execute o instalador:**
+   ```bash
+   java -jar lombok.jar
+   ```
+   - Selecione sua instalação do Eclipse
+   - Clique "Install/Update"
+   - Reinicie o Eclipse
+
+#### IntelliJ IDEA:
+- Instale o plugin "Lombok" via Settings → Plugins
+- Habilite "Annotation Processing" em Settings → Build → Compiler → Annotation Processors
+
+#### VS Code:
+- Instale a extensão "Lombok Annotations Support for VS Code"
+
+### Verificação do Setup
+```bash
+# Teste se compila sem erros
+mvn compile
+
+# Execute os testes
+mvn test
+```
 
 ## Como Executar
 
@@ -138,7 +191,7 @@ mvn test -Dtest="PerformanceTest"
 - **WebhookControllerTest**: 4/4 ✅
 - **PerformanceTest**: 2/2 ✅
 
-**Total**: 23 testes funcionais, 0 falhas
+**Total**: 25 testes funcionais, 0 falhas
 
 ### 📊 Cenários Testados
 
@@ -172,7 +225,45 @@ mvn test -Dtest="PerformanceTest"
 ### Collection Postman
 Importe o arquivo `Parking-Management.postman_collection.json` no Postman para testes manuais.
 
-## Monitoramento
+## 🛠️ Troubleshooting
+
+### Erros de Compilação com Lombok
+**Problema:** IDE mostra erros "cannot find symbol" para getters/setters
+
+**Solução:**
+1. Verifique se Lombok está instalado na IDE
+2. Refresh do projeto (F5 no Eclipse)
+3. Clean + Rebuild: `mvn clean compile`
+4. Reinicie a IDE
+
+### Docker não inicia
+**Problema:** "Docker daemon not running"
+
+**Solução:**
+1. Inicie o Docker Desktop
+2. Aguarde a inicialização completa
+3. Verifique: `docker --version`
+
+### MySQL Connection Error
+**Problema:** "Connection refused" ao conectar no MySQL
+
+**Solução:**
+1. Aguarde 10-15 segundos após `docker-compose up -d mysql`
+2. Verifique se está rodando: `docker ps`
+3. Reinicie se necessário: `docker-compose restart mysql`
+
+## 📋 Checklist para Avaliadores
+
+- [ ] Java 21 instalado
+- [ ] Docker Desktop rodando
+- [ ] Lombok configurado na IDE
+- [ ] Projeto compila: `mvn compile`
+- [ ] Testes passam: `mvn test`
+- [ ] MySQL iniciado: `docker-compose up -d mysql`
+- [ ] Aplicação roda: `mvn spring-boot:run`
+- [ ] Endpoints respondem: `http://localhost:3003/revenue?sector=A&date=2025-01-20`
+
+## 📊 Monitoramento
 
 ### Logs
 - Nível DEBUG para `com.estapar.parking`
@@ -184,3 +275,23 @@ Importe o arquivo `Parking-Management.postman_collection.json` no Postman para t
 - **Database:** parking_db
 - **Usuário:** parking_user
 - **Senha:** parking_pass
+
+## 🤝 Contribuição
+
+Este projeto foi desenvolvido como sistema de gerenciamento de estacionamento com foco em:
+- Arquitetura limpa e testável
+- Cobertura completa de testes
+- Documentação detalhada
+- Configuração simplificada para avaliação
+
+### Estrutura do Projeto
+```
+src/
+├── main/java/com/estapar/parking/
+│   ├── controller/     # REST Controllers
+│   ├── service/        # Lógica de negócio
+│   ├── entity/         # Entidades JPA
+│   ├── dto/            # Data Transfer Objects
+│   └── config/         # Configurações
+└── test/               # Testes automatizados
+```

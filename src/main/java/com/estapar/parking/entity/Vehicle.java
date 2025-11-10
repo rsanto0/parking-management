@@ -34,6 +34,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "vehicles")
 @Data
 @NoArgsConstructor
+@org.hibernate.annotations.DynamicInsert
+@org.hibernate.annotations.DynamicUpdate
 public class Vehicle {
     
     /**

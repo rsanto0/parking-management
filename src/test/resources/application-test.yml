@@ -4,22 +4,16 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password: 
-  
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
     properties:
       hibernate:
-        format_sql: true
-  
-  h2:
-    console:
-      enabled: true
-
-simulator:
-  url: http://localhost:8080
+        dialect: org.hibernate.dialect.H2Dialect
 
 logging:
   level:
-    com.estapar.parking: DEBUG
+    com.estapar.parking: INFO
+    org.hibernate: WARN

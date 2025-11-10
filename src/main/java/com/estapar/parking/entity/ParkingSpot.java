@@ -28,6 +28,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "parking_spots")
 @Data
 @NoArgsConstructor
+@org.hibernate.annotations.DynamicInsert
+@org.hibernate.annotations.DynamicUpdate
 public class ParkingSpot {
     
 	
