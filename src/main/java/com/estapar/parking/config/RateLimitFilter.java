@@ -38,13 +38,13 @@ public class RateLimitFilter implements Filter {
     
     /**
      * Número máximo de requisições permitidas por IP na janela de tempo.
-     * Valor: 5 requisições por minuto.
+     * Valor: 5 requisições por janela de 10 segundos.
      */
     private static final int MAX_REQUESTS = 5;
     
     /**
      * Janela de tempo em milissegundos para contagem de requisições.
-     * Valor: 60.000ms = 1 minuto.
+     * Valor: 10.000ms = 10 segundos.
      */
     private static final long TIME_WINDOW = 10000; // 10 segundos
 

@@ -140,12 +140,36 @@ GET http://localhost:3003/revenue?sector=A&date=2025-01-20
 ## Segurança
 
 ### Rate Limiting
-- 100 requisições por minuto por IP
-- Retorna HTTP 429 quando excedido
+
+O sistema implementa **rate limiting** para proteger contra ataques DoS e abuso da API:
+
+**Configuração:**
+- **Limite:** 5 requisições por IP
+- **Janela:** 10 segundos
+- **Resposta:** HTTP 429 (Too Many Requests)
+- **Reset:** Automático após janela de tempo
+
+**Funcionamento:**
+1. Cada IP pode fazer até 5 requisições em 10 segundos
+2. A 6ª requisição retorna erro 429
+3. Após 10 segundos, o contador reseta
+4. Considera proxies via header `X-Forwarded-For`
+
+**Exemplo de uso:**
+```bash
+# Primeiras 5 requisições: HTTP 200 OK
+curl -X POST http://localhost:3003/webhook -d '{...}'
+
+# 6ª requisição: HTTP 429 Too Many Requests
+curl -X POST http://localhost:3003/webhook -d '{...}'
+# Response: {"error":"Rate limit exceeded"}
+
+# Após 10 segundos: HTTP 200 OK novamente
+```
 
 ### Endpoints Públicos
-- `/webhook` - Recebe eventos do simulador
-- `/revenue` - Consulta de receita
+- `/webhook` - Recebe eventos do simulador (com rate limiting)
+- `/revenue` - Consulta de receita (com rate limiting)
 
 ## Testes
 
@@ -163,8 +187,8 @@ O sistema possui uma **suíte completa de testes** cobrindo todos os cenários c
 - **Cobertura**: Endpoints públicos, validação de payloads
 
 #### **Testes de Performance**
-- **PerformanceTest**: Concorrência e tempo de resposta
-- **Cobertura**: Múltiplos webhooks simultâneos, rate limiting
+- **PerformanceTest**: Rate limiting e concorrência
+- **Cobertura**: Limite de 5 req/10s, reset de janela, HTTP 429
 
 ### 🚀 Executar Testes
 
@@ -217,10 +241,11 @@ mvn test -Dtest="PerformanceTest"
 - ✅ Veículo não encontrado
 - ✅ Payloads inválidos
 
-#### **Performance**
-- ✅ Concorrência: 20+ webhooks simultâneos
-- ✅ Rate limiting funcional
-- ✅ Batch operations para múltiplas vagas
+#### **Performance e Rate Limiting**
+- ✅ Rate limiting: 5 requisições por janela de 10s
+- ✅ Bloqueio correto após limite excedido (HTTP 429)
+- ✅ Reset automático da janela de tempo
+- ✅ Concorrência: múltiplos webhooks simultâneos
 
 ### Collection Postman
 Importe o arquivo `Parking-Management.postman_collection.json` no Postman para testes manuais.
