@@ -1,0 +1,21 @@
+server:
+  port: 3003
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/parking_db
+    username: parking_user
+    password: parking_pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+
+logging:
+  level:
+    com.estapar.parking: DEBUG
+
+simulator:
+  url: http://localhost:8080

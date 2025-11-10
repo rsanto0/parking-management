@@ -1,0 +1,177 @@
+{
+	"info": {
+		"name": "Parking Management API",
+		"description": "Collection para testar o sistema de gerenciamento de estacionamento",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Webhook Events",
+			"item": [
+				{
+					"name": "Vehicle Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"license_plate\": \"ABC1234\",\n  \"entry_time\": \"2025-01-20T10:00:00\",\n  \"event_type\": \"ENTRY\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhook"
+							]
+						}
+					}
+				},
+				{
+					"name": "Vehicle Parked",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"license_plate\": \"ABC1234\",\n  \"lat\": -23.561684,\n  \"lng\": -46.655981,\n  \"event_type\": \"PARKED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhook"
+							]
+						}
+					}
+				},
+				{
+					"name": "Vehicle Exit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"license_plate\": \"ABC1234\",\n  \"exit_time\": \"2025-01-20T12:30:00\",\n  \"event_type\": \"EXIT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhook"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Revenue API",
+			"item": [
+				{
+					"name": "Get Revenue - Sector A",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/revenue?sector=A&date=2025-01-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"revenue"
+							],
+							"query": [
+								{
+									"key": "sector",
+									"value": "A"
+								},
+								{
+									"key": "date",
+									"value": "2025-01-20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Revenue - Sector B",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/revenue?sector=B&date=2025-01-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"revenue"
+							],
+							"query": [
+								{
+									"key": "sector",
+									"value": "B"
+								},
+								{
+									"key": "date",
+									"value": "2025-01-20"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Simulator API",
+			"item": [
+				{
+					"name": "Get Garage Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{simulatorUrl}}/garage",
+							"host": [
+								"{{simulatorUrl}}"
+							],
+							"path": [
+								"garage"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3003"
+		},
+		{
+			"key": "simulatorUrl",
+			"value": "http://localhost:8080"
+		}
+	]
+}
