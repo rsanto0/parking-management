@@ -2,6 +2,8 @@ package com.estapar.parking.service;
 
 import com.estapar.parking.entity.ParkingSpot;
 import com.estapar.parking.entity.Vehicle;
+import com.estapar.parking.exception.ParkingFullException;
+import com.estapar.parking.exception.VehicleNotFoundException;
 import com.estapar.parking.repository.ParkingSpotRepository;
 import com.estapar.parking.repository.VehicleRepository;
 import org.slf4j.Logger;
@@ -129,7 +131,7 @@ public class ParkingService {
         // Verifica se estacionamento está lotado
         if (garageService.isFull()) {
             log.warn("Estacionamento LOTADO - entrada negada para {}", licensePlate);
-            throw new RuntimeException("Lotado");
+            throw new ParkingFullException("LOTADO");
         }
 
         // Calcula e registra lotação atual
@@ -200,7 +202,7 @@ public class ParkingService {
     public void handleExit(String licensePlate, String exitTime) {
         // Localiza veículo ativo no sistema
         var vehicle = vehicleRepository.findActiveByLicensePlate(licensePlate)
-            .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
+            .orElseThrow(() -> new VehicleNotFoundException(licensePlate));
 
         // Registra timestamp de saída e atualiza status
         LocalDateTime exit = LocalDateTime.parse(exitTime);
@@ -248,7 +250,7 @@ public class ParkingService {
         
         // Verifica se há vagas disponíveis
         if (available.isEmpty()) {
-            throw new RuntimeException("Nenhuma vaga disponível");
+            throw new ParkingFullException("LOTADO");
         }
         
         // Seleciona vaga aleatoriamente
