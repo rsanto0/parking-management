@@ -28,7 +28,12 @@ class PricingServiceTest {
 
     @ParameterizedTest
     @DisplayName("Arredondamento: sempre para cima")
-    @CsvSource({
+    // Testa arredondamento para cima:
+    // - 31 minutos é arredondado para 1 hora completa
+    // - 60 minutos é exatamente 1 hora
+    // - 61 minutos é arredondado para 2 horas completas  
+    // - 125 minutos é arredondado para 3 horas completas
+    @CsvSource({        
         "31, 1",  // 31 min = 1 hora
         "60, 1",  // 60 min = 1 hora  
         "61, 2",  // 61 min = 2 horas

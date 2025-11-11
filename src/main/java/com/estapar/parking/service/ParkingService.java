@@ -3,6 +3,7 @@ package com.estapar.parking.service;
 import com.estapar.parking.entity.ParkingSpot;
 import com.estapar.parking.entity.Vehicle;
 import com.estapar.parking.exception.ParkingFullException;
+import com.estapar.parking.exception.VehicleAlreadyParkedException;
 import com.estapar.parking.exception.VehicleNotFoundException;
 import com.estapar.parking.repository.ParkingSpotRepository;
 import com.estapar.parking.repository.VehicleRepository;
@@ -127,6 +128,12 @@ public class ParkingService {
     @Transactional
     public void handleEntry(String licensePlate, String entryTime) {
         log.info("Placa capturada: {}", licensePlate);
+
+        // Verifica se veículo já está estacionado
+        if (vehicleRepository.findActiveByLicensePlate(licensePlate).isPresent()) {
+            log.warn("Entrada negada - veículo {} já está estacionado", licensePlate);
+            throw new VehicleAlreadyParkedException(licensePlate);
+        }
 
         // Verifica se estacionamento está lotado
         if (garageService.isFull()) {

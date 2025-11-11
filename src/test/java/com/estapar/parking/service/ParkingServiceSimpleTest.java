@@ -1,6 +1,7 @@
 package com.estapar.parking.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
@@ -21,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.estapar.parking.entity.ParkingSpot;
 import com.estapar.parking.entity.Sector;
 import com.estapar.parking.entity.Vehicle;
+import com.estapar.parking.exception.VehicleAlreadyParkedException;
+import com.estapar.parking.exception.VehicleNotFoundException;
 import com.estapar.parking.repository.ParkingSpotRepository;
 import com.estapar.parking.repository.SectorRepository;
 import com.estapar.parking.repository.VehicleRepository;
@@ -61,6 +64,7 @@ class ParkingServiceSimpleTest {
         var licensePlate = "ABC1234";
         var entryTime = "2025-01-20T10:00:00";
         
+        when(vehicleRepository.findActiveByLicensePlate(licensePlate)).thenReturn(Optional.empty());
         when(garageService.isFull()).thenReturn(false);
         when(garageService.getOccupancyRate()).thenReturn(50.0);
         when(spotRepository.findAll()).thenReturn(java.util.List.of(spot1));
@@ -70,6 +74,33 @@ class ParkingServiceSimpleTest {
         parkingService.handleEntry(licensePlate, entryTime);
         
         assertThat(true).as("Entrada processada com sucesso").isTrue();
+    }
+
+    @Test
+    @DisplayName("❌ Entrada: deve rejeitar veículo já estacionado")
+    void shouldRejectAlreadyParkedVehicle() {
+        var licensePlate = "ABC1234";
+        var entryTime = "2025-01-20T10:00:00";
+        
+        var existingVehicle = new Vehicle();
+        existingVehicle.setLicensePlate(licensePlate);
+        when(vehicleRepository.findActiveByLicensePlate(licensePlate)).thenReturn(Optional.of(existingVehicle));
+        
+        assertThatThrownBy(() -> parkingService.handleEntry(licensePlate, entryTime))
+            .isInstanceOf(VehicleAlreadyParkedException.class)
+            .hasMessageContaining("já está estacionado");
+    }
+
+    @Test
+    @DisplayName("❌ Saída: deve rejeitar saída sem entrada")
+    void shouldRejectExitWithoutEntry() {
+        var licensePlate = "XYZ9999";
+        var exitTime = "2025-01-20T12:00:00";
+        
+        when(vehicleRepository.findActiveByLicensePlate(licensePlate)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> parkingService.handleExit(licensePlate, exitTime))
+            .isInstanceOf(VehicleNotFoundException.class);
     }
 
     @Test
