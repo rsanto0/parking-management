@@ -28,6 +28,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "parking_spots")
 @Data
 @NoArgsConstructor
+// @DynamicInsert indica ao Hibernate para incluir apenas campos não-nulos no SQL INSERT
+// Isso otimiza a query evitando valores NULL desnecessários e permitindo que valores default
+// do banco de dados sejam aplicados, o mesmo conceito se aplica ao DynamicUpdate
 @org.hibernate.annotations.DynamicInsert
 @org.hibernate.annotations.DynamicUpdate
 public class ParkingSpot {

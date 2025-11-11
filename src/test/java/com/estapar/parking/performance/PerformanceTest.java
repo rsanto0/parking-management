@@ -23,8 +23,21 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// Esta anotação configura um teste de integração com Spring Boot
+// webEnvironment = RANDOM_PORT significa que a aplicação será iniciada
+// com um servidor web em uma porta aleatória disponível
+// Isso é útil para testes que precisam fazer requisições HTTP reais
+// e evita conflitos de porta com outras aplicações
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// @ActiveProfiles("test") é uma anotação do Spring que indica qual perfil de configuração 
+// deve ser ativado durante a execução dos testes. Neste caso, o perfil "test" será usado,
+// permitindo carregar configurações específicas para testes (como banco de dados em memória,
+// mocks, etc) que são diferentes das configurações de produção
 @ActiveProfiles("test")
+// @DirtiesContext indica que o contexto do Spring deve ser reiniciado
+// Esta anotação é usada quando precisamos garantir que cada teste comece com um estado limpo
+// classMode = BEFORE_EACH_TEST_METHOD significa que o contexto será reiniciado antes de cada método de teste
+// Isso é útil para testes que modificam o estado da aplicação e precisam começar do zero a cada execução
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @DisplayName("Performance - Testes de Carga")
 class PerformanceTest {
