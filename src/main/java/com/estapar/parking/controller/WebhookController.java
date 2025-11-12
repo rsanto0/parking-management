@@ -56,109 +56,20 @@ public class WebhookController {
     }
 
     /**
-     * Record para encapsular resposta de erro com status e mensagem.
-     */
-    private record ErrorResponse(HttpStatus status, String message) {}
-
-    /**
-     * Processa eventos de movimentação usando programação funcional moderna.
+     * Processa eventos de movimentação de veículos.
+     * Exceções são tratadas pelo GlobalExceptionHandler.
      */
     @PostMapping
-    public ResponseEntity<String> handleEvent(@Valid @RequestBody WebhookEvent event) {
+    public ResponseEntity<Void> handleEvent(@Valid @RequestBody WebhookEvent event) {
         log.info("Evento recebido: {} para veículo {}", event.getEventType(), event.getLicensePlate());
 
-        return processEvent(event)
-            .map(error -> ResponseEntity.status(error.status()).body(error.message()))
-            .orElse(ResponseEntity.ok().build());
-    }
-
-    /**
-     * Processa evento e retorna Optional com erro se houver falha.
-     */
-    private java.util.Optional<ErrorResponse> processEvent(WebhookEvent event) {
-        try {
-        	
-        	/*
-        	 * Switch Expression do Java 21 com yield
-			 * Type-safe: Cada case retorna Optional<ErrorResponse>
-			 * Null-safe: Não há Map intermediário que pode falhar
-        	 * */
-        	
-            return switch (event.getEventType()) {
-                case "ENTRY" -> {
-                    parkingService.handleEntry(event.getLicensePlate(), event.getEntryTime());
-                    yield java.util.Optional.<ErrorResponse>empty();
-                }
-                case "PARKED" -> {
-                    parkingService.handleParked(event.getLicensePlate(), event.getLat(), event.getLng());
-                    yield java.util.Optional.<ErrorResponse>empty();
-                }
-                case "EXIT" -> {
-                    parkingService.handleExit(event.getLicensePlate(), event.getExitTime());
-                    yield java.util.Optional.<ErrorResponse>empty();
-                }
-                default -> {
-                    log.warn("Tipo de evento desconhecido: {}", event.getEventType());
-                    yield java.util.Optional.<ErrorResponse>empty();
-                }
-            };
-        } catch (RuntimeException e) {
-            log.error("Erro ao processar evento: {}", e.getMessage());
-            
-            var status = e.getMessage().contains("Veículo não encontrado") 
-                ? HttpStatus.NOT_FOUND 
-                : HttpStatus.BAD_REQUEST;
-            
-            return java.util.Optional.of(new ErrorResponse(status, e.getMessage()));
+        switch (event.getEventType()) {
+            case "ENTRY" -> parkingService.handleEntry(event.getLicensePlate(), event.getEntryTime());
+            case "PARKED" -> parkingService.handleParked(event.getLicensePlate(), event.getLat(), event.getLng());
+            case "EXIT" -> parkingService.handleExit(event.getLicensePlate(), event.getExitTime());
+            default -> log.warn("Tipo de evento desconhecido: {}", event.getEventType());
         }
-    }
-    
-    
-//    /**
-//     * Processa eventos de movimentação usando programação funcional moderna.
-//     */
-//    @PostMapping
-//    public ResponseEntity<String> handleEvent(@Valid @RequestBody WebhookEvent event) {
-//        log.info("Evento recebido: {} para veículo {}", event.getEventType(), event.getLicensePlate());
-//
-//        return processEvent(event)
-//            .map(error -> ResponseEntity.status(error.status()).body(error.message()))
-//            .orElse(ResponseEntity.ok().build());
-//    }
 
-//    /**
-//     * Processa evento e retorna Optional com erro se houver falha.
-//     */
-//    private java.util.Optional<ErrorResponse> processEvent(WebhookEvent event) {
-//        try {
-    
-    			/*
-    			 * Map.of() não aceita valores null, e alguns métodos do WebhookEvent podem retornar null
-    			 * Lambdas com parâmetros null causavam NullPointerException
-    			 * */
-    
-//            var eventHandlers = java.util.Map.of(
-//                "ENTRY", () -> parkingService.handleEntry(event.getLicensePlate(), event.getEntryTime()),
-//                "PARKED", () -> parkingService.handleParked(event.getLicensePlate(), event.getLat(), event.getLng()),
-//                "EXIT", () -> parkingService.handleExit(event.getLicensePlate(), event.getExitTime())
-//            );
-//
-//            java.util.Optional.ofNullable(eventHandlers.get(event.getEventType()))
-//                .ifPresentOrElse(
-//                    Runnable::run,
-//                    () -> log.warn("Tipo de evento desconhecido: {}", event.getEventType())
-//                );
-//            
-//            return java.util.Optional.empty();
-//        } catch (RuntimeException e) {
-//            log.error("Erro ao processar evento: {}", e.getMessage());
-//            
-//            var status = e.getMessage().contains("Veículo não encontrado") 
-//                ? HttpStatus.NOT_FOUND 
-//                : HttpStatus.BAD_REQUEST;
-//            
-//            return java.util.Optional.of(new ErrorResponse(status, e.getMessage()));
-//        }
-//    }
-    
+        return ResponseEntity.ok().build();
+    }
 }
