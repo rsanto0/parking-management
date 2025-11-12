@@ -1,7 +1,7 @@
 package com.estapar.parking.controller;
 
 import com.estapar.parking.dto.WebhookEvent;
-import com.estapar.parking.service.ParkingService;
+import com.estapar.parking.service.EventQueueService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.math.BigDecimal;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,10 +32,10 @@ class WebhookControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private ParkingService parkingService;
+    private EventQueueService eventQueueService;
 
     @Test
-    @DisplayName("ENTRY: deve processar entrada de veículo")
+    @DisplayName("ENTRY: deve enfileirar entrada de veículo")
     void shouldProcessEntryEvent() throws Exception {
         var dateTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         
@@ -45,16 +44,18 @@ class WebhookControllerTest {
         event.setLicensePlate("ABC1234");
         event.setEntryTime(dateTimeString);
 
+        when(eventQueueService.enqueue(any(WebhookEvent.class))).thenReturn(true);
+
         mockMvc.perform(post("/webhook")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(event)))
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted());
 
-        verify(parkingService).handleEntry(event.getLicensePlate(), event.getEntryTime());
+        verify(eventQueueService).enqueue(any(WebhookEvent.class));
     }
 
     @Test
-    @DisplayName("EXIT: deve processar saída de veículo")
+    @DisplayName("EXIT: deve enfileirar saída de veículo")
     void shouldProcessExitEvent() throws Exception {
         var dateTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         
@@ -63,45 +64,31 @@ class WebhookControllerTest {
         event.setLicensePlate("DEF5678");
         event.setExitTime(dateTimeString);
 
-        mockMvc.perform(post("/webhook")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(event)))
-                .andExpect(status().isOk());
-
-        verify(parkingService).handleExit(event.getLicensePlate(), event.getExitTime());
-    }
-
-    @Test
-    @DisplayName("Evento desconhecido: deve rejeitar com 400")
-    void shouldIgnoreUnknownEventType() throws Exception {
-        var event = new WebhookEvent();
-        event.setEventType("UNKNOWN");
-        event.setLicensePlate("GHI9012");
+        when(eventQueueService.enqueue(any(WebhookEvent.class))).thenReturn(true);
 
         mockMvc.perform(post("/webhook")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(event)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isAccepted());
 
-        verifyNoInteractions(parkingService);
+        verify(eventQueueService).enqueue(any(WebhookEvent.class));
     }
 
     @Test
-    @DisplayName("Erro: deve retornar 400")
-    void shouldReturn400OnError() throws Exception {
+    @DisplayName("Fila cheia: deve retornar 503")
+    void shouldReturn503WhenQueueFull() throws Exception {
         var dateTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         
         var event = new WebhookEvent();
         event.setEventType("ENTRY");
-        event.setLicensePlate("ERROR123");
+        event.setLicensePlate("ABC1D23");
         event.setEntryTime(dateTimeString);
 
-        doThrow(new RuntimeException("Erro de processamento"))
-                .when(parkingService).handleEntry(anyString(), any());
+        when(eventQueueService.enqueue(any(WebhookEvent.class))).thenReturn(false);
 
         mockMvc.perform(post("/webhook")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(event)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isServiceUnavailable());
     }
 }
