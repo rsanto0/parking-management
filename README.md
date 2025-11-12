@@ -95,10 +95,19 @@ A aplicação estará disponível em `http://localhost:3003`
 ```
 POST http://localhost:3003/webhook
 ```
+**Resposta:**
+- `202 Accepted` - Evento enfileirado para processamento assíncrono
+- `503 Service Unavailable` - Fila cheia (evento enviado para DLQ)
 
 ### Consulta de Receita
 ```
 GET http://localhost:3003/revenue?sector=A&date=2025-01-20
+```
+
+### Dead Letter Queue (DLQ)
+```
+GET http://localhost:3003/dlq        # Lista eventos rejeitados
+GET http://localhost:3003/dlq/size   # Quantidade de eventos na DLQ
 ```
 
 ## Regras de Negócio
@@ -137,39 +146,44 @@ GET http://localhost:3003/revenue?sector=A&date=2025-01-20
 **Permanência de 2 horas:**
 - Total: R$ 3,69 + R$ 4,10 = R$ 7,79
 
-## Segurança
+## Arquitetura Assíncrona
 
-### Rate Limiting
+### Processamento de Eventos
 
-O sistema implementa **rate limiting** para proteger contra ataques DoS e abuso da API:
+O sistema utiliza **arquitetura assíncrona** para processar eventos do simulador:
+
+**Benefícios:**
+- ⚡ **Alta Performance**: Webhook responde em <100ms
+- 🔄 **Desacoplamento**: Controller não bloqueia aguardando processamento
+- 📊 **Backpressure**: Fila absorve picos de carga (1000 eventos)
+- 🛡️ **Resiliência**: DLQ captura eventos quando fila está cheia
+
+**Fluxo:**
+1. Webhook recebe evento → Enfileira → Retorna HTTP 202
+2. Thread consumidora processa eventos em ordem (FIFO)
+3. Se fila cheia → Evento vai para DLQ → Retorna HTTP 503
 
 **Configuração:**
-- **Limite:** 5 requisições por IP
-- **Janela:** 10 segundos
-- **Resposta:** HTTP 429 (Too Many Requests)
-- **Reset:** Automático após janela de tempo
+- **Capacidade da fila:** 1000 eventos
+- **DLQ:** Ilimitada (eventos rejeitados)
+- **Threads assíncronas:** 2-4 (configurável)
 
-**Funcionamento:**
-1. Cada IP pode fazer até 5 requisições em 10 segundos
-2. A 6ª requisição retorna erro 429
-3. Após 10 segundos, o contador reseta
-4. Considera proxies via header `X-Forwarded-For`
+### Dead Letter Queue (DLQ)
 
-**Exemplo de uso:**
+Eventos rejeitados quando a fila principal está cheia são automaticamente enviados para a DLQ:
+
 ```bash
-# Primeiras 5 requisições: HTTP 200 OK
-curl -X POST http://localhost:3003/webhook -d '{...}'
+# Consultar eventos rejeitados
+curl http://localhost:3003/dlq
 
-# 6ª requisição: HTTP 429 Too Many Requests
-curl -X POST http://localhost:3003/webhook -d '{...}'
-# Response: {"error":"Rate limit exceeded"}
-
-# Após 10 segundos: HTTP 200 OK novamente
+# Verificar quantidade na DLQ
+curl http://localhost:3003/dlq/size
 ```
 
 ### Endpoints Públicos
-- `/webhook` - Recebe eventos do simulador (com rate limiting)
-- `/revenue` - Consulta de receita (com rate limiting)
+- `/webhook` - Recebe eventos do simulador (processamento assíncrono)
+- `/revenue` - Consulta de receita
+- `/dlq` - Gerenciamento de Dead Letter Queue
 
 ## Testes
 
@@ -184,11 +198,11 @@ O sistema possui uma **suíte completa de testes** cobrindo todos os cenários c
 
 #### **Testes de Integração**
 - **WebhookControllerTest**: Validação de endpoints e payloads
-- **Cobertura**: Endpoints públicos, validação de payloads
+- **Cobertura**: Enfileiramento assíncrono, HTTP 202/503, validação de payloads
 
-#### **Testes de Performance**
-- **PerformanceTest**: Rate limiting e concorrência
-- **Cobertura**: Limite de 5 req/10s, reset de janela, HTTP 429
+#### **Testes Assíncronos**
+- **EventQueueServiceTest**: Fila, DLQ e processamento assíncrono
+- **Cobertura**: Enfileiramento rápido (<100ms), FIFO, backpressure, DLQ, resiliência
 
 ### 🚀 Executar Testes
 
@@ -211,11 +225,10 @@ mvn test -Dtest="PerformanceTest"
 
 - **PricingServiceTest**: 16/16 ✅
 - **ParkingServiceSimpleTest**: 3/3 ✅  
+- **WebhookControllerTest**: 3/3 ✅
+- **EventQueueServiceTest**: 6/6 ✅
 
-- **WebhookControllerTest**: 4/4 ✅
-- **PerformanceTest**: 2/2 ✅
-
-**Total**: 25 testes funcionais, 0 falhas
+**Total**: 28 testes funcionais, 0 falhas
 
 ### 📊 Cenários Testados
 
@@ -229,7 +242,9 @@ mvn test -Dtest="PerformanceTest"
 - ✅ ENTRY: Entrada com alocação de vaga
 - ✅ PARKED: Confirmação de estacionamento
 - ✅ EXIT: Saída com cálculo e cobrança
-- ✅ Eventos desconhecidos ignorados
+- ✅ Processamento assíncrono com fila
+- ✅ HTTP 202 Accepted para eventos enfileirados
+- ✅ HTTP 503 quando fila cheia
 
 #### **Segurança**
 - ✅ Endpoints públicos: `/webhook`, `/revenue`
@@ -241,11 +256,13 @@ mvn test -Dtest="PerformanceTest"
 - ✅ Veículo não encontrado
 - ✅ Payloads inválidos
 
-#### **Performance e Rate Limiting**
-- ✅ Rate limiting: 5 requisições por janela de 10s
-- ✅ Bloqueio correto após limite excedido (HTTP 429)
-- ✅ Reset automático da janela de tempo
+#### **Performance e Assincronismo**
+- ✅ Enfileiramento rápido: <100ms por evento
+- ✅ Processamento FIFO: eventos em ordem
+- ✅ Backpressure: fila cheia envia para DLQ
+- ✅ Resiliência: falhas não param consumidor
 - ✅ Concorrência: múltiplos webhooks simultâneos
+- ✅ DLQ: captura eventos rejeitados
 
 ### Collection Postman
 Importe o arquivo `Parking-Management.postman_collection.json` no Postman para testes manuais.
@@ -313,10 +330,18 @@ Este projeto foi desenvolvido como sistema de gerenciamento de estacionamento co
 ```
 src/
 ├── main/java/com/estapar/parking/
-│   ├── controller/     # REST Controllers
+│   ├── controller/     # REST Controllers (Webhook, Revenue, DLQ)
 │   ├── service/        # Lógica de negócio
+│   │   ├── EventQueueService.java    # Fila assíncrona + DLQ
+│   │   ├── ParkingService.java       # Regras de negócio
+│   │   └── PricingService.java       # Cálculo de preços
 │   ├── entity/         # Entidades JPA
 │   ├── dto/            # Data Transfer Objects
-│   └── config/         # Configurações
+│   └── config/         # Configurações (Async, Security)
 └── test/               # Testes automatizados
 ```
+
+### Documentação Adicional
+
+Para detalhes técnicos da arquitetura assíncrona, consulte:
+- `ASYNC_ARCHITECTURE.md` - Documentação completa da fila e DLQ
