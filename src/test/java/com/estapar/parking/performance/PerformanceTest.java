@@ -86,7 +86,7 @@ class PerformanceTest {
             var entity = new HttpEntity<>(payload, headers);
             var response = restTemplate.postForEntity("/webhook", entity, String.class);
             
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         }
         
         // 6ª requisição deve ser bloqueada
@@ -140,7 +140,7 @@ class PerformanceTest {
         var entity = new HttpEntity<>(payload, headers);
         var response = restTemplate.postForEntity("/webhook", entity, String.class);
         
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
     }
     
 
