@@ -16,11 +16,17 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         globally_quoted_identifiers: false
-
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 4
+      thread-name-prefix: async-
 
 logging:
   level:
     com.estapar.parking: DEBUG
+    com.estapar.parking.service.EventQueueService: DEBUG
 
 simulator:
   url: http://localhost:8080
