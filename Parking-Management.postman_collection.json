@@ -30,7 +30,8 @@
 							"path": [
 								"webhook"
 							]
-						}
+						},
+						"description": "Enfileira evento de entrada para processamento assíncrono. Retorna HTTP 202 Accepted se enfileirado, HTTP 503 se fila cheia."
 					}
 				},
 				{
@@ -138,6 +139,46 @@
 								}
 							]
 						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Queue Management",
+			"item": [
+				{
+					"name": "Get DLQ Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dlq",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"dlq"
+							]
+						},
+						"description": "Lista todos os eventos rejeitados na Dead Letter Queue (fila cheia)"
+					}
+				},
+				{
+					"name": "Get DLQ Size",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dlq/size",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"dlq",
+								"size"
+							]
+						},
+						"description": "Retorna quantidade de eventos na Dead Letter Queue"
 					}
 				}
 			]
